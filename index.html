@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Voice to Text</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    #recordBtn {
+      background-color: #e74c3c;
+      border: none;
+      color: white;
+      padding: 20px;
+      font-size: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s ease;
+    }
+
+    #recordBtn.recording {
+      background-color: #2ecc71;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+      70% { box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+    }
+
+    #result {
+      margin-top: 30px;
+      width: 80%;
+      max-width: 600px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      color: #333;
+      font-size: 18px;
+      min-height: 80px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎙️ Voice to Text</h1>
+  <button id="recordBtn">🎤</button>
+  <div id="result">Tekan tombol untuk mulai berbicara...</div>
+
+  <script>
+    const recordBtn = document.getElementById('recordBtn');
+    const resultDiv = document.getElementById('result');
+
+    let recognizing = false;
+    let recognition;
+
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'id-ID';
+
+      recognition.onstart = function () {
+        console.log('Voice recognition started.');
+        resultDiv.textContent = 'Mendengarkan...';
+      };
+
+      recognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        resultDiv.textContent = transcript;
+      };
+
+      recognition.onerror = function (event) {
+        console.error('Error occurred:', event.error);
+        resultDiv.textContent = 'Terjadi kesalahan: ' + event.error;
+      };
+
+      recognition.onend = function () {
+        recognizing = false;
+        recordBtn.classList.remove('recording');
+        recordBtn.textContent = '🎤';
+      };
+
+      recordBtn.addEventListener('click', () => {
+        if (!recognizing) {
+          recognition.start();
+          recognizing = true;
+          recordBtn.classList.add('recording');
+          recordBtn.textContent = '⏹️';
+        } else {
+          recognition.stop();
+        }
+      });
+
+    } else {
+      resultDiv.textContent = 'Browser tidak mendukung Speech Recognition.';
+    }
+  </script>
+</body>
+</html>
