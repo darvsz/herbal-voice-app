@@ -3,181 +3,256 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Voice Debug Test</title>
+    <title>Voice to Text - Mobile</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
             background: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
         }
         
-        .info-box {
-            background: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
+        h1 {
+            color: #333;
+            text-align: center;
         }
         
-        .error { border-left-color: #e74c3c; }
-        .success { border-left-color: #2ecc71; }
-        .warning { border-left-color: #f39c12; }
-        
-        button {
-            background: #3498db;
-            color: white;
+        #recordBtn {
+            background-color: #e74c3c;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            color: white;
+            padding: 20px;
+            font-size: 24px;
+            border-radius: 50%;
             cursor: pointer;
-            margin: 5px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        button:disabled {
-            background: #bdc3c7;
+        #recordBtn.recording {
+            background-color: #2ecc71;
+            animation: pulse 1.2s infinite;
+        }
+        
+        #recordBtn:disabled {
+            background-color: #bdc3c7;
             cursor: not-allowed;
         }
         
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+        
         #result {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 600px;
             background: white;
-            padding: 15px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            color: #333;
+            font-size: 18px;
+            min-height: 80px;
+            word-wrap: break-word;
+        }
+        
+        #status {
+            margin-top: 15px;
+            padding: 10px;
+            background: #ecf0f1;
             border-radius: 8px;
-            margin: 10px 0;
-            min-height: 50px;
-            border: 1px solid #ddd;
+            font-size: 14px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        
+        .error {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .success {
+            background: #2ecc71;
+            color: white;
         }
     </style>
 </head>
 <body>
-    <h1>🔍 Voice to Text Debug Test</h1>
-    
-    <div class="info-box">
-        <h3>Info Browser:</h3>
-        <p id="browserInfo">Loading...</p>
-    </div>
-    
-    <div class="info-box">
-        <h3>Status API:</h3>
-        <p id="apiStatus">Checking...</p>
-    </div>
-    
-    <div class="info-box">
-        <h3>HTTPS Status:</h3>
-        <p id="httpsStatus">Checking...</p>
-    </div>
-    
-    <div class="info-box">
-        <h3>Microphone Permission:</h3>
-        <p id="micStatus">Not checked</p>
-        <button id="checkMicBtn">Check Microphone</button>
-    </div>
-    
-    <div class="info-box">
-        <h3>Speech Recognition Test:</h3>
-        <button id="testSpeechBtn" disabled>Test Speech Recognition</button>
-        <div id="result">Hasil akan muncul di sini...</div>
-    </div>
+    <h1>🎙️ Voice to Text</h1>
+    <button id="recordBtn">🎤</button>
+    <div id="result">Tekan tombol e su</div>
+    <div id="status">Memuat...</div>
 
     <script>
-        // Get browser info
-        document.getElementById('browserInfo').textContent = navigator.userAgent;
+        const recordBtn = document.getElementById('recordBtn');
+        const resultDiv = document.getElementById('result');
+        const statusDiv = document.getElementById('status');
         
-        // Check HTTPS
-        const httpsStatus = document.getElementById('httpsStatus');
-        if (location.protocol === 'https:') {
-            httpsStatus.textContent = '✅ HTTPS - OK';
-            httpsStatus.parentElement.className = 'info-box success';
-        } else {
-            httpsStatus.textContent = '❌ HTTP - Speech API butuh HTTPS di mobile';
-            httpsStatus.parentElement.className = 'info-box error';
+        let recognizing = false;
+        let recognition;
+        let isSupported = false;
+
+        // Check browser support
+        function checkSupport() {
+            if ('webkitSpeechRecognition' in window) {
+                statusDiv.textContent = 'Browser mendukung Speech Recognition';
+                statusDiv.className = 'success';
+                isSupported = true;
+                return true;
+            } else if ('SpeechRecognition' in window) {
+                statusDiv.textContent = 'Browser mendukung Speech Recognition';
+                statusDiv.className = 'success';
+                isSupported = true;
+                return true;
+            } else {
+                statusDiv.textContent = 'Browser tidak mendukung Speech Recognition';
+                statusDiv.className = 'error';
+                recordBtn.disabled = true;
+                return false;
+            }
         }
-        
-        // Check API support
-        const apiStatus = document.getElementById('apiStatus');
-        let speechSupported = false;
-        
-        if ('webkitSpeechRecognition' in window) {
-            apiStatus.textContent = '✅ webkitSpeechRecognition supported';
-            apiStatus.parentElement.className = 'info-box success';
-            speechSupported = true;
-        } else if ('SpeechRecognition' in window) {
-            apiStatus.textContent = '✅ SpeechRecognition supported';
-            apiStatus.parentElement.className = 'info-box success';
-            speechSupported = true;
-        } else {
-            apiStatus.textContent = '❌ Speech Recognition tidak didukung di browser ini';
-            apiStatus.parentElement.className = 'info-box error';
+
+        // Initialize speech recognition
+        function initSpeechRecognition() {
+            try {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'id-ID';
+                recognition.maxAlternatives = 1;
+
+                recognition.onstart = function () {
+                    console.log('Voice recognition started');
+                    resultDiv.textContent = 'Mendengarkan...';
+                    statusDiv.textContent = 'Sedang mendengarkan...';
+                    statusDiv.className = '';
+                };
+
+                recognition.onresult = function (event) {
+                    const transcript = event.results[0][0].transcript;
+                    const confidence = event.results[0][0].confidence;
+                    
+                    resultDiv.textContent = transcript;
+                    statusDiv.textContent = `Berhasil! Tingkat kepercayaan: ${Math.round(confidence * 100)}%`;
+                    statusDiv.className = 'success';
+                    
+                    console.log('Transcript:', transcript);
+                    console.log('Confidence:', confidence);
+                };
+
+                recognition.onerror = function (event) {
+                    console.error('Speech recognition error:', event.error);
+                    
+                    let errorMessage = 'Terjadi kesalahan: ';
+                    switch(event.error) {
+                        case 'not-allowed':
+                            errorMessage += 'Akses microphone ditolak. Periksa permission browser.';
+                            break;
+                        case 'no-speech':
+                            errorMessage += 'Tidak ada suara yang terdeteksi.';
+                            break;
+                        case 'audio-capture':
+                            errorMessage += 'Tidak dapat mengakses microphone.';
+                            break;
+                        case 'network':
+                            errorMessage += 'Masalah jaringan.';
+                            break;
+                        default:
+                            errorMessage += event.error;
+                    }
+                    
+                    resultDiv.textContent = errorMessage;
+                    statusDiv.textContent = errorMessage;
+                    statusDiv.className = 'error';
+                };
+
+                recognition.onend = function () {
+                    recognizing = false;
+                    recordBtn.classList.remove('recording');
+                    recordBtn.textContent = '🎤';
+                    
+                    if (statusDiv.textContent.includes('Sedang mendengarkan')) {
+                        statusDiv.textContent = 'Siap untuk merekam';
+                        statusDiv.className = '';
+                    }
+                };
+
+                statusDiv.textContent = 'Siap untuk merekam';
+                statusDiv.className = '';
+
+            } catch (error) {
+                console.error('Error initializing speech recognition:', error);
+                statusDiv.textContent = 'Error saat inisialisasi: ' + error.message;
+                statusDiv.className = 'error';
+                recordBtn.disabled = true;
+            }
         }
-        
-        // Check microphone permission
-        const checkMicBtn = document.getElementById('checkMicBtn');
-        const micStatus = document.getElementById('micStatus');
-        
-        checkMicBtn.addEventListener('click', async () => {
+
+        // Request microphone permission
+        async function requestMicrophonePermission() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => track.stop());
-                micStatus.textContent = '✅ Microphone permission granted';
-                micStatus.parentElement.className = 'info-box success';
-                
-                if (speechSupported) {
-                    document.getElementById('testSpeechBtn').disabled = false;
+                statusDiv.textContent = 'Permission microphone diberikan';
+                statusDiv.className = 'success';
+                return true;
+            } catch (error) {
+                console.error('Microphone permission denied:', error);
+                statusDiv.textContent = 'Permission microphone ditolak';
+                statusDiv.className = 'error';
+                return false;
+            }
+        }
+
+        // Start/stop recording
+        async function toggleRecording() {
+            if (!recognizing) {
+                // Request permission first
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const hasPermission = await requestMicrophonePermission();
+                    if (!hasPermission) return;
                 }
-            } catch (error) {
-                micStatus.textContent = '❌ Microphone permission denied: ' + error.message;
-                micStatus.parentElement.className = 'info-box error';
+
+                try {
+                    recognition.start();
+                    recognizing = true;
+                    recordBtn.classList.add('recording');
+                    recordBtn.textContent = '⏹️';
+                } catch (error) {
+                    console.error('Error starting recognition:', error);
+                    statusDiv.textContent = 'Error memulai perekaman: ' + error.message;
+                    statusDiv.className = 'error';
+                }
+            } else {
+                recognition.stop();
             }
-        });
-        
-        // Test speech recognition
-        const testSpeechBtn = document.getElementById('testSpeechBtn');
-        const result = document.getElementById('result');
-        
-        testSpeechBtn.addEventListener('click', () => {
-            if (!speechSupported) {
-                result.textContent = '❌ Speech Recognition tidak didukung';
-                return;
-            }
-            
-            try {
-                const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                recognition.lang = 'id-ID';
-                recognition.continuous = false;
-                recognition.interimResults = false;
-                
-                recognition.onstart = function() {
-                    result.textContent = '🎤 Mendengarkan... (bicara sekarang)';
-                    testSpeechBtn.textContent = 'Sedang mendengarkan...';
-                    testSpeechBtn.disabled = true;
-                };
-                
-                recognition.onresult = function(event) {
-                    const transcript = event.results[0][0].transcript;
-                    result.textContent = '✅ Hasil: ' + transcript;
-                };
-                
-                recognition.onerror = function(event) {
-                    result.textContent = '❌ Error: ' + event.error;
-                };
-                
-                recognition.onend = function() {
-                    testSpeechBtn.textContent = 'Test Speech Recognition';
-                    testSpeechBtn.disabled = false;
-                };
-                
-                recognition.start();
-            } catch (error) {
-                result.textContent = '❌ Error starting recognition: ' + error.message;
-            }
-        });
-        
-        // Show specific mobile warnings
-        const userAgent = navigator.userAgent;
-        if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
-            const warning = document.createElement('div');
-            warning.className = 'info-box error';
-            warning.innerHTML = '<h3>⚠️ iOS Safari Warning:</h3><p>Safari di iOS tidak mendukung Web Speech API. Coba gunakan Chrome atau Firefox di iOS.</p>';
-            document.body.insertBefore(warning, document.body.firstChild);
+        }
+
+        // Initialize everything
+        if (checkSupport()) {
+            initSpeechRecognition();
+            recordBtn.addEventListener('click', toggleRecording);
+        }
+
+        // Additional mobile-specific checks
+        if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+            statusDiv.textContent = 'iOS Safari tidak mendukung Web Speech API. Gunakan Chrome atau Firefox.';
+            statusDiv.className = 'error';
+            recordBtn.disabled = true;
         }
     </script>
 </body>
