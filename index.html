@@ -3,214 +3,74 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Voice to Text Chat</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f4f8;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    h1 {
-      color: #333;
-      text-align: center;
-    }
-
-    #recordBtn {
-      background-color: #e74c3c;
-      border: none;
-      color: white;
-      padding: 20px;
-      font-size: 24px;
-      border-radius: 50%;
-      cursor: pointer;
-      margin-bottom: 15px;
-    }
-
-    #recordBtn.recording {
-      background-color: #2ecc71;
-      animation: pulse 1.2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
-      70% { box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
-    }
-
-    #chatContainer {
-      width: 100%;
-      max-width: 600px;
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-    }
-
-    .chatbox {
-      max-height: 400px;
-      overflow-y: auto;
-      margin-bottom: 15px;
-    }
-
-    .message {
-      margin: 10px 0;
-      padding: 10px 14px;
-      border-radius: 14px;
-      max-width: 70%;
-      word-wrap: break-word;
-    }
-
-    .user {
-      background-color: #d1f0ff;
-      align-self: flex-end;
-      text-align: right;
-      margin-left: auto;
-    }
-
-    .bot {
-      background-color: #e2e2e2;
-      align-self: flex-start;
-      margin-right: auto;
-    }
-
-    #textInput {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      font-size: 16px;
-    }
-
-    #sendBtn, #clearBtn {
-      padding: 10px 16px;
-      font-size: 16px;
-      margin-right: 8px;
-      cursor: pointer;
-      border: none;
-      border-radius: 6px;
-    }
-
-    #sendBtn {
-      background-color: #3498db;
-      color: white;
-    }
-
-    #clearBtn {
-      background-color: #e74c3c;
-      color: white;
-    }
-  </style>
+  <title>AI Chat Herbal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-
-  <h1>🎙️ Tabib AI</h1>
-  <button id="recordBtn">🎤</button>
-
-  <div id="chatContainer">
-    <div class="chatbox" id="chatBox"></div>
-    <textarea id="textInput" rows="2" placeholder="Tulis atau gunakan voice..."></textarea>
-    <div>
-      <button id="sendBtn">Kirim</button>
-      <button id="clearBtn">Hapus Chat</button>
-    </div>
+<body class="bg-green-50">
+  <div class="flex flex-col h-screen max-w-md mx-auto border bg-white shadow-lg rounded-xl overflow-hidden">
+    <div class="bg-green-600 text-white text-xl font-semibold px-4 py-3">Tabib AI - Herbal Chat</div>
+    
+    <div id="chat" class="flex-1 p-4 space-y-2 overflow-y-auto"></div>
+    
+    <form id="chat-form" class="flex items-center p-2 border-t gap-2">
+      <input
+        type="text"
+        id="user-input"
+        placeholder="Tanyakan keluhanmu..."
+        class="flex-1 border px-4 py-2 rounded-full focus:outline-none focus:ring focus:ring-green-300"
+      />
+      <button
+        type="submit"
+        class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-full"
+      >
+        Kirim
+      </button>
+    </form>
   </div>
 
   <script>
-    const recordBtn = document.getElementById('recordBtn');
-    const chatBox = document.getElementById('chatBox');
-    const textInput = document.getElementById('textInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const clearBtn = document.getElementById('clearBtn');
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('user-input');
 
-    let recognizing = false;
-    let recognition;
-
-    // Inisialisasi Web Speech
-    if ('webkitSpeechRecognition' in window) {
-      recognition = new webkitSpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'id-ID';
-
-      recognition.onstart = () => {
-        console.log('Mendengarkan...');
-      };
-
-      recognition.onresult = event => {
-        const transcript = event.results[0][0].transcript;
-        textInput.value = transcript;
-      };
-
-      recognition.onerror = event => {
-        console.error('Error:', event.error);
-        alert('Terjadi kesalahan: ' + event.error);
-      };
-
-      recognition.onend = () => {
-        recognizing = false;
-        recordBtn.classList.remove('recording');
-        recordBtn.textContent = '🎤';
-      };
-
-      recordBtn.addEventListener('click', () => {
-        if (!recognizing) {
-          recognition.start();
-          recognizing = true;
-          recordBtn.classList.add('recording');
-          recordBtn.textContent = '⏹️';
-        } else {
-          recognition.stop();
-        }
-      });
-    } else {
-      alert("Browser tidak mendukung Speech Recognition.");
-    }
-
-    // Tambah pesan ke chatbox
-    function addMessage(text, sender) {
+    function appendMessage(text, isUser) {
       const msg = document.createElement('div');
-      msg.className = message ${sender};
+      msg.className = `max-w-[70%] px-4 py-2 rounded-lg text-sm whitespace-pre-wrap ${
+        isUser
+          ? 'bg-green-100 text-right self-end ml-auto'
+          : 'bg-gray-200 text-left self-start mr-auto'
+      }`;
       msg.textContent = text;
-      chatBox.appendChild(msg);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
     }
 
-    // Kirim ke backend
-    sendBtn.addEventListener('click', async () => {
-      const userText = textInput.value.trim();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userText = input.value.trim();
       if (!userText) return;
 
-      addMessage(userText, 'user');
-      textInput.value = '';
+      appendMessage(userText, true); // user bubble (kanan)
+      input.value = '';
 
       try {
-        const response = await fetch('https://ferna-backend.onrender.com/chat', {
+        const res = await fetch('https://your-backend-url.com/chat', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: userText })
         });
 
-        const data = await response.json();
-        addMessage(data.reply || 'Tidak ada balasan.', 'bot');
+        const data = await res.json();
+        if (data.reply) {
+          appendMessage(data.reply, false); // AI bubble (kiri)
+        } else {
+          appendMessage('[Gagal mendapatkan balasan]', false);
+        }
       } catch (err) {
+        appendMessage('[Terjadi kesalahan koneksi]', false);
         console.error(err);
-        addMessage('Gagal menghubungi server.', 'bot');
       }
     });
-
-    // Hapus semua chat
-    clearBtn.addEventListener('click', () => {
-      chatBox.innerHTML = '';
-    });
   </script>
-
 </body>
 </html>
