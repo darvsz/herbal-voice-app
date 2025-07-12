@@ -3,160 +3,135 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tabib AI - Chat Herbal</title>
+  <title>Tabib AI - Pesan Herbal</title>
   <style>
-    /* --- sama seperti sebelumnya, tidak diubah --- */
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f4f8;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
-    }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 20px;
+    margin: 0;
+  }
 
-    h1 {
-      color: #333;
-      text-align: center;
-    }
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+  }
 
-    #recordBtn {
-      background-color: #e74c3c;
-      border: none;
-      color: white;
-      padding: 20px;
-      font-size: 24px;
-      border-radius: 50%;
-      cursor: pointer;
-      margin-bottom: 15px;
-    }
+  .hidden { display: none; }
 
-    #recordBtn.recording {
-      background-color: #2ecc71;
-      animation: pulse 1.2s infinite;
-    }
+  .section {
+    width: 100%;
+    max-width: 500px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    text-align: center;
+    margin-bottom: 20px;
+  }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
-      70% { box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
-    }
+  input, textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
 
-    #chatContainer {
-      width: 100%;
-      max-width: 600px;
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-    }
+  button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
 
-    .chatbox {
-      display: flex;
-      flex-direction: column;
-      max-height: 400px;
-      overflow-y: auto;
-      margin-bottom: 15px;
-    }
+  .primary { background: #3498db; color: white; }
+  .success { background: #2ecc71; color: white; }
+  .danger { background: #e74c3c; color: white; }
 
-    .message {
-      margin: 8px 0;
-      padding: 10px 14px;
-      border-radius: 18px;
-      max-width: 70%;
-      word-wrap: break-word;
-    }
+  #recordBtn.recording {
+    background-color: #2ecc71;
+    animation: pulse 1.2s infinite;
+  }
 
-    .user {
-      background-color: #d1f0ff;
-      align-self: flex-end;
-      text-align: right;
-    }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+    70% { box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+  }
+</style>
 
-    .bot {
-      background-color: #e2e2e2;
-      align-self: flex-start;
-      text-align: left;
-    }
-
-    #textInput {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      font-size: 16px;
-      resize: none;
-    }
-
-    #sendBtn, #clearBtn {
-      padding: 10px 16px;
-      font-size: 16px;
-      margin-right: 8px;
-      cursor: pointer;
-      border: none;
-      border-radius: 6px;
-    }
-
-    #sendBtn {
-      background-color: #3498db;
-      color: white;
-    }
-
-    #clearBtn {
-      background-color: #e74c3c;
-      color: white;
-    }
-  </style>
 </head>
 <body>
 
-  <h1>🎙️ Tabib AI</h1>
-  <button id="recordBtn">🎤</button>
+  <h1>🧪 Tabib AI - Pesan Herbal</h1>
 
-  <div id="chatContainer">
-    <div class="chatbox" id="chatBox"></div>
-    <textarea id="textInput" rows="2" placeholder="Tulis atau gunakan voice..."></textarea>
-    <div>
-      <button id="sendBtn">Kirim</button>
-      <button id="clearBtn">Hapus Chat</button>
-    </div>
+  <div id="step1" class="section">
+    <h2>1. Masukkan Nama Pembeli</h2>
+    <input type="text" id="namaInput" placeholder="Contoh: Budi" />
+    <button class="primary" onclick="lanjutKeKeluhan()">Lanjut</button>
+  </div>
+
+  <div id="step2" class="section hidden">
+    <h2>2. Masukkan Keluhan</h2>
+    <textarea id="keluhanInput" rows="3" placeholder="Tulis keluhan atau gunakan suara..."></textarea>
+    <button id="recordBtn" class="danger">🎤 Rekam Suara</button><br>
+    <button class="primary" onclick="kirimKeluhan()">Kirim ke Tabib</button>
+  </div>
+
+  <div id="proses" class="section hidden">
+    <h2>⏳ Obat sedang diproses...</h2>
+  </div>
+
+  <div id="buatObat" class="section hidden">
+    <h2>✅ Resep sudah dikirim ke mesin.</h2>
+    <button class="success" onclick="alert('Mesin sedang membuat obat...')">🔧 Buat Obat</button>
   </div>
 
   <script>
     const recordBtn = document.getElementById('recordBtn');
-    const chatBox = document.getElementById('chatBox');
-    const textInput = document.getElementById('textInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const clearBtn = document.getElementById('clearBtn');
-
+    let namaPembeli = '';
     let recognizing = false;
     let recognition;
 
+    function lanjutKeKeluhan() {
+      const input = document.getElementById('namaInput').value.trim();
+      if (!input) return alert('Isi nama dulu ya!');
+      namaPembeli = input;
+      document.getElementById('step1').classList.add('hidden');
+      document.getElementById('step2').classList.remove('hidden');
+    }
+
+    // Suara
     if ('webkitSpeechRecognition' in window) {
       recognition = new webkitSpeechRecognition();
+      recognition.lang = 'id-ID';
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'id-ID';
-
-      recognition.onstart = () => {
-        console.log('Mendengarkan...');
-      };
 
       recognition.onresult = event => {
-        const transcript = event.results[0][0].transcript;
-        textInput.value = transcript;
+        const text = event.results[0][0].transcript;
+        document.getElementById('keluhanInput').value = text;
       };
 
       recognition.onerror = event => {
-        alert('Terjadi kesalahan: ' + event.error);
+        alert('Error suara: ' + event.error);
       };
 
       recognition.onend = () => {
         recognizing = false;
         recordBtn.classList.remove('recording');
-        recordBtn.textContent = '🎤';
+        recordBtn.textContent = '🎤 Rekam Suara';
       };
 
       recordBtn.addEventListener('click', () => {
@@ -164,48 +139,55 @@
           recognition.start();
           recognizing = true;
           recordBtn.classList.add('recording');
-          recordBtn.textContent = '⏹️';
+          recordBtn.textContent = '⏹️ Stop';
         } else {
           recognition.stop();
         }
       });
-    } else {
-      alert("Browser tidak mendukung Speech Recognition.");
     }
 
-    function addMessage(text, sender) {
-      const msg = document.createElement('div');
-      msg.className = `message ${sender}`;
-      msg.textContent = text;
-      chatBox.appendChild(msg);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+    async function kirimKeluhan() {
+      const keluhan = document.getElementById('keluhanInput').value.trim();
+      if (!keluhan) return alert('Keluhan belum diisi.');
 
-    sendBtn.addEventListener('click', async () => {
-      const userText = textInput.value.trim();
-      if (!userText) return;
-
-      addMessage(userText, 'user');
-      textInput.value = '';
+      document.getElementById('step2').classList.add('hidden');
+      document.getElementById('proses').classList.remove('hidden');
 
       try {
         const res = await fetch('https://ferna-backend.onrender.com/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userText })
+          body: JSON.stringify({ nama: namaPembeli, message: keluhan })
         });
 
         const data = await res.json();
-        addMessage(data.reply || '❌ Tidak ada balasan dari tabib.', 'bot');
+        console.log('Dikirim ke ESP32:', data.reply);
+
+        pollingStatus(); // mulai cek apakah sudah diambil esp32
       } catch (err) {
         console.error(err);
-        addMessage('⚠️ Gagal menghubungi server.', 'bot');
+        alert('Gagal mengirim keluhan.');
       }
-    });
+    }
 
-    clearBtn.addEventListener('click', () => {
-      chatBox.innerHTML = '';
-    });
+    // Polling backend apakah ESP32 sudah ambil
+    async function pollingStatus() {
+      let tries = 0;
+      const interval = setInterval(async () => {
+        tries++;
+        const res = await fetch(`https://ferna-backend.onrender.com/status?nama=${namaPembeli}`);
+        const data = await res.json();
+        if (data.status === 'done') {
+          clearInterval(interval);
+          document.getElementById('proses').classList.add('hidden');
+          document.getElementById('buatObat').classList.remove('hidden');
+        }
+        if (tries > 30) {
+          clearInterval(interval);
+          alert('ESP32 tidak merespon.');
+        }
+      }, 3000);
+    }
   </script>
 </body>
 </html>
