@@ -99,6 +99,31 @@
       0%, 100% { opacity: 0.2; }
       50% { opacity: 1; }
     }
+.spinner {
+  animation: spin 1.2s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-dots::after {
+  content: '';
+  display: inline-block;
+  animation: dots 1.5s steps(3, end) infinite;
+  width: 1em;
+  text-align: left;
+}
+
+@keyframes dots {
+  0%   { content: ''; }
+  33%  { content: '.'; }
+  66%  { content: '..'; }
+  100% { content: '...'; }
+}
+
   </style>
 </head>
 <body>
@@ -122,7 +147,8 @@
 
   <!-- Status -->
   <div id="proses" class="section hidden">
-    <h2>⏳ Obat sedang diproses...</h2>
+    <h2><span class="spinner">⏳</span> <span id="statusText" class="loading-dots">Obat sedang diproses</span></h2>
+
 
     <div style="display: flex; flex-direction: column; align-items: start; gap: 15px; margin-top: 20px;">
       <div class="status-item"><span class="dot" id="dot1"></span> Mengirim ke Tabib AI</div>
@@ -236,11 +262,17 @@
         tries++;
         const res = await fetch(`https://ferna-backend.onrender.com/status?nama=${namaPembeli}`);
         const data = await res.json();
-        if (data.status === 'done') {
-          clearInterval(interval);
-          document.getElementById('proses').classList.add('hidden');
-          document.getElementById('buatObat').classList.remove('hidden');
-        }
+if (data.status === 'done') {
+  clearInterval(interval);
+  document.getElementById('statusText').textContent = '🧪 Ramuan siap dibuat';
+  document.getElementById('statusText').classList.remove('loading-dots');
+  document.querySelector('.spinner').remove(); // Hapus jam pasir
+  setTimeout(() => {
+    document.getElementById('proses').classList.add('hidden');
+    document.getElementById('buatObat').classList.remove('hidden');
+  }, 2000); // Delay 2 detik agar transisi terasa
+}
+
         if (tries > 30) {
           clearInterval(interval);
           alert('ESP32 tidak merespon.');
