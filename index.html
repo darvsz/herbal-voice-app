@@ -5,70 +5,195 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tabib AI - Pesan Herbal</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f4f8; display: flex; flex-direction: column; align-items: center; padding: 20px; min-height: 100vh; }
-    .section { width: 100%; max-width: 500px; background: white; padding: 20px; margin-top: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h1 { text-align: center; margin-bottom: 30px; }
     .hidden { display: none; }
-    input, textarea { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-    button { margin-top: 15px; padding: 10px 20px; font-size: 16px; border: none; border-radius: 6px; cursor: pointer; }
+
+    .section {
+      width: 100%;
+      max-width: 500px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
     .primary { background: #3498db; color: white; }
     .success { background: #2ecc71; color: white; }
-    .dot { width: 16px; height: 16px; border-radius: 50%; background-color: #ccc; display: inline-block; margin-right: 10px; }
-    .dot.active { background-color: #3498db; }
-    .spinner { display: inline-block; animation: spin 1.2s linear infinite; }
+    .danger { background: #e74c3c; color: white; }
+
+    #recordBtn.recording {
+      background-color: #2ecc71;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+      70% { box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+    }
+
+    .status-item {
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: #ccc;
+      transition: background-color 0.3s;
+    }
+
+    .dot.active {
+      background-color: #3498db;
+    }
+
+    .fade-text {
+      margin-top: 25px;
+      text-align: center;
+      color: #555;
+      animation: fadeInOut 3s infinite;
+      font-style: italic;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+    .spinner { animation: spin 1.2s linear infinite; display: inline-block; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .loading-dots::after {
+      content: '';
+      display: inline-block;
+      animation: dots 1.5s steps(3, end) infinite;
+      width: 1em;
+      text-align: left;
+    }
+    @keyframes dots {
+      0%   { content: ''; }
+      33%  { content: '.'; }
+      66%  { content: '..'; }
+      100% { content: '...'; }
+    }
   </style>
 </head>
 <body>
-
   <h1>🧪 Tabib AI - Pesan Herbal</h1>
-
-  <!-- Step 1: Nama -->
   <div id="step1" class="section">
-    <h2>1. Masukkan Nama</h2>
+    <h2>1. Masukkan Nama Pembeli</h2>
     <input type="text" id="namaInput" placeholder="Contoh: Budi" />
     <button class="primary" onclick="lanjutKeKeluhan()">Lanjut</button>
   </div>
-
-  <!-- Step 2: Keluhan -->
   <div id="step2" class="section hidden">
-    <h2>2. Tulis Keluhan</h2>
-    <textarea id="keluhanInput" placeholder="Keluhan Anda..."></textarea>
-    <button class="primary" onclick="kirimKeluhan()">Kirim</button>
+    <h2>2. Masukkan Keluhan</h2>
+    <textarea id="keluhanInput" rows="3" placeholder="Tulis keluhan atau gunakan suara..."></textarea>
+    <button id="recordBtn" class="danger">🎤 Rekam Suara</button><br>
+    <button class="primary" onclick="kirimKeluhan()">Kirim ke Tabib</button>
   </div>
-
-  <!-- Status -->
   <div id="proses" class="section hidden">
-    <h2><span class="spinner">⏳</span> <span id="statusText">Obat sedang diproses...</span></h2>
-    <p><span class="dot" id="dot1"></span> Mengirim ke Tabib AI</p>
-    <p><span class="dot" id="dot2"></span> Tabib meresepkan</p>
-    <p><span class="dot" id="dot3"></span> Resep jadi</p>
-    <p><span class="dot" id="dot4"></span> Resep dikirim ke juru ramu</p>
+    <h2><span class="spinner">⏳</span> <span id="statusText" class="loading-dots">Obat sedang diproses</span></h2>
+    <div style="display: flex; flex-direction: column; align-items: start; gap: 15px; margin-top: 20px;">
+      <div class="status-item"><span class="dot" id="dot1"></span> Mengirim ke Tabib AI</div>
+      <div class="status-item"><span class="dot" id="dot2"></span> Tabib meresepkan</div>
+      <div class="status-item"><span class="dot" id="dot3"></span> Resep jadi</div>
+      <div class="status-item"><span class="dot" id="dot4"></span> Resep dikirim ke juru ramu</div>
+    </div>
+    <div id="petunjuk" class="fade-text">
+      Silahkan menyiapkan gelas dan letakan di cawan ramuan.<br>
+      Tunggu hingga lampu hijau menyala,<br>
+      Dekatkan telapak tangan anda ke tangan tabib untuk memulai proses ramuan,<br>
+      sambil tabib akan membaca garis tangan anda.
+    </div>
   </div>
-
-  <!-- Selesai -->
   <div id="buatObat" class="section hidden">
-    <h2>✅ Ramuan siap dibuat!</h2>
-    <button class="success" onclick="alert('Mesin mulai membuat ramuan...')">🔧 Buat Ramuan</button>
+    <h2>✅ Resep sudah dikirim ke mesin.</h2>
+    <button class="success" onclick="alert('Mesin sedang membuat obat...')">🔧 Buat Obat</button>
   </div>
-
-  <!-- MQTT via CDN -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script>
     let namaPembeli = '';
+    let recognizing = false;
+    let recognition;
 
     function lanjutKeKeluhan() {
-      const nama = document.getElementById('namaInput').value.trim();
-      if (!nama) return alert('Masukkan nama terlebih dahulu.');
-      namaPembeli = nama;
+      const input = document.getElementById('namaInput').value.trim();
+      if (!input) return alert('Isi nama dulu ya!');
+      namaPembeli = input;
       document.getElementById('step1').classList.add('hidden');
       document.getElementById('step2').classList.remove('hidden');
     }
 
-    function kirimKeluhan() {
-      const keluhan = document.getElementById('keluhanInput').value.trim();
-      if (!keluhan) return alert('Tuliskan keluhan terlebih dahulu.');
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = 'id-ID';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onresult = event => {
+        const text = event.results[0][0].transcript;
+        document.getElementById('keluhanInput').value = text;
+      };
+      recognition.onerror = event => alert('Error suara: ' + event.error);
+      recognition.onend = () => {
+        recognizing = false;
+        recordBtn.classList.remove('recording');
+        recordBtn.textContent = '🎤 Rekam Suara';
+      };
+      const recordBtn = document.getElementById('recordBtn');
+      recordBtn.addEventListener('click', () => {
+        if (!recognizing) {
+          recognition.start();
+          recognizing = true;
+          recordBtn.classList.add('recording');
+          recordBtn.textContent = '⏹️ Stop';
+        } else {
+          recognition.stop();
+        }
+      });
+    }
 
-      // Simulasi proses
+    async function kirimKeluhan() {
+      const keluhan = document.getElementById('keluhanInput').value.trim();
+      if (!keluhan) return alert('Keluhan belum diisi.');
+
       document.getElementById('step2').classList.add('hidden');
       document.getElementById('proses').classList.remove('hidden');
 
@@ -76,36 +201,45 @@
       setTimeout(() => document.getElementById('dot2').classList.add('active'), 1000);
       setTimeout(() => document.getElementById('dot3').classList.add('active'), 2000);
       setTimeout(() => document.getElementById('dot4').classList.add('active'), 3000);
+
+      try {
+        const res = await fetch('https://ferna-backend.onrender.com/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nama: namaPembeli, message: keluhan })
+        });
+        const data = await res.json();
+        console.log('Dikirim ke backend:', data);
+      } catch (err) {
+        console.error('Gagal kirim ke backend:', err);
+        alert('Gagal mengirim ke tabib AI.');
+      }
     }
 
-    // MQTT Setup
-    const mqttOptions = {
+    const mqttClient = mqtt.connect('wss://aaa73f0ae1d24cc3bf099bad4916f53e.s1.eu.hivemq.cloud:8884/mqtt', {
       username: 'herbal',
       password: 'Astari1412',
+      clean: true,
       connectTimeout: 4000,
-      reconnectPeriod: 1000,
-      clean: true
-    };
-
-    const mqttClient = mqtt.connect('wss://aaa73f0ae1d24cc3bf099bad4916f53e.s1.eu.hivemq.cloud/mqtt', mqttOptions);
+      reconnectPeriod: 1000
+    });
 
     mqttClient.on('connect', () => {
-      console.log('✅ MQTT Connected!');
+      console.log('✅ MQTT Connected');
       mqttClient.subscribe('tabibai/status', err => {
-        if (err) console.error('❌ Gagal subscribe:', err.message);
+        if (err) console.error('Gagal subscribe:', err);
         else console.log('📡 Subscribed ke tabibai/status');
       });
     });
 
-    mqttClient.on('message', (topic, msg) => {
-      console.log('📨 MQTT message:', msg.toString());
-
+    mqttClient.on('message', (topic, message) => {
       if (topic === 'tabibai/status') {
         try {
-          const data = JSON.parse(msg.toString());
-          if (data?.nama?.toLowerCase() === namaPembeli.toLowerCase() && data.status === 'done') {
-            console.log('✅ Trigger diterima, ramuan selesai!');
-            document.getElementById('statusText').textContent = '🧪 Ramuan siap dibuat!';
+          const data = JSON.parse(message.toString());
+          console.log('MQTT data:', data);
+          if (data.nama?.toLowerCase() === namaPembeli.toLowerCase() && data.status === 'done') {
+            document.getElementById('statusText').textContent = '🧪 Ramuan siap dibuat';
+            document.getElementById('statusText').classList.remove('loading-dots');
             document.querySelector('.spinner')?.remove();
             setTimeout(() => {
               document.getElementById('proses').classList.add('hidden');
@@ -113,7 +247,7 @@
             }, 1500);
           }
         } catch (e) {
-          console.error('❌ Format MQTT salah:', e.message);
+          console.error('Format pesan MQTT salah:', e);
         }
       }
     });
