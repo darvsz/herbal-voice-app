@@ -72,8 +72,15 @@
       transition: background-color 0.3s;
     }
     .dot.active {
-      background-color: #3498db;
-    }
+  background-color: #2ecc71; /* hijau */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
     .fade-text {
       margin-top: 25px;
       text-align: center;
@@ -134,15 +141,21 @@
     <div id="petunjuk" class="fade-text">
       Silahkan menyiapkan gelas dan letakan di cawan ramuan.<br>
       Tunggu hingga lampu hijau menyala,<br>
-      Dekatkan telapak tangan anda ke tangan tabib untuk memulai proses ramuan,<br>
-      sambil tabib akan membaca garis tangan anda.
+      Siapkan telapak tangan anda dan cari pemindai,<br>
+      tabib akan membaca garis tangan anda melalui itu.
     </div>
   </div>
 
   <!-- DONE -->
   <div id="buatObat" class="section hidden">
     <h2>✅ Resep sudah dikirim ke mesin.</h2>
-    <button class="success" onclick="alert('Mesin sedang membuat obat...')">🔧 Buat Obat</button>
+   <div class="fade-text">
+    Pastikan gelas sudah berada di cawan ramuan.<br>
+    Tunggu hingga lampu hijau dan pemindai menyala <br>
+    lalu Tempelkan telapak tangan anda <br>
+    di pemindai agar tabib dapat <br>
+    membaca garis tangan anda.
+  </div>
   </div>
 
   <!-- SCRIPT -->
@@ -193,10 +206,17 @@
       if (!keluhan) return alert('Keluhan belum diisi.');
       document.getElementById('step2').classList.add('hidden');
       document.getElementById('proses').classList.remove('hidden');
-      document.getElementById('dot1').classList.add('active');
-      setTimeout(() => document.getElementById('dot2').classList.add('active'), 1000);
-      setTimeout(() => document.getElementById('dot3').classList.add('active'), 2000);
-      setTimeout(() => document.getElementById('dot4').classList.add('active'), 3000);
+      function aktifkanDot(id) {
+  const dot = document.getElementById(id);
+  dot.classList.add('active');
+  dot.textContent = '✔';
+}
+
+aktifkanDot('dot1');
+setTimeout(() => aktifkanDot('dot2'), 1000);
+setTimeout(() => aktifkanDot('dot3'), 2000);
+setTimeout(() => aktifkanDot('dot4'), 3000);
+
       try {
         await fetch('https://ferna-backend.onrender.com/chat', {
           method: 'POST',
