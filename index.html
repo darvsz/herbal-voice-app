@@ -279,6 +279,49 @@ if (data.status === 'done') {
         }
       }, 3000);
     }
-  </script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script>
+  const mqttOptions = {
+    username: 'herbal',
+    password: 'Astari1412',
+    clean: true,
+    connectTimeout: 4000,
+    reconnectPeriod: 1000,
+  };
+
+  const mqttClient = mqtt.connect('wss://aaa73f0ae1d24cc3bf099bad4916f53e.s1.eu.hivemq.cloud:8884/mqtt', mqttOptions);
+
+  mqttClient.on('connect', () => {
+    console.log('🔗 MQTT Connected!');
+    mqttClient.subscribe('tabibai/status', err => {
+      if (err) console.error('❌ Gagal subscribe ke MQTT:', err.message);
+      else console.log('📡 Subscribed ke tabibai/status');
+    });
+  });
+
+  mqttClient.on('message', (topic, message) => {
+    if (topic === 'tabibai/status') {
+      try {
+        const data = JSON.parse(message.toString());
+        if (data.nama === namaPembeli && data.status === 'done') {
+          console.log('✅ Resep selesai dari MQTT');
+          document.getElementById('statusText').textContent = '🧪 Ramuan siap dibuat';
+          document.getElementById('statusText').classList.remove('loading-dots');
+          document.querySelector('.spinner')?.remove();
+          setTimeout(() => {
+            document.getElementById('proses').classList.add('hidden');
+            document.getElementById('buatObat').classList.remove('hidden');
+          }, 2000);
+        }
+      } catch (e) {
+        console.error('❌ Format pesan MQTT salah:', e.message);
+      }
+    }
+  });
+</script>
+
+
+
+
 </body>
 </html>
