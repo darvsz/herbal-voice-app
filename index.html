@@ -16,10 +16,8 @@
       padding: 20px;
       margin: 0;
     }
-
     h1 { text-align: center; margin-bottom: 30px; }
     .hidden { display: none; }
-
     .section {
       width: 100%;
       max-width: 500px;
@@ -31,7 +29,6 @@
       text-align: center;
       margin-bottom: 20px;
     }
-
     input, textarea {
       width: 100%;
       padding: 12px;
@@ -41,7 +38,6 @@
       font-size: 16px;
       box-sizing: border-box;
     }
-
     button {
       margin-top: 15px;
       padding: 10px 20px;
@@ -50,29 +46,24 @@
       border-radius: 6px;
       cursor: pointer;
     }
-
     .primary { background: #3498db; color: white; }
     .success { background: #2ecc71; color: white; }
     .danger { background: #e74c3c; color: white; }
-
     #recordBtn.recording {
       background-color: #2ecc71;
       animation: pulse 1.2s infinite;
     }
-
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
       70% { box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
       100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
     }
-
     .status-item {
       font-size: 16px;
       display: flex;
       align-items: center;
       gap: 10px;
     }
-
     .dot {
       width: 16px;
       height: 16px;
@@ -80,11 +71,9 @@
       background-color: #ccc;
       transition: background-color 0.3s;
     }
-
     .dot.active {
       background-color: #3498db;
     }
-
     .fade-text {
       margin-top: 25px;
       text-align: center;
@@ -94,7 +83,6 @@
       font-size: 15px;
       line-height: 1.5;
     }
-
     @keyframes fadeInOut {
       0%, 100% { opacity: 0.2; }
       50% { opacity: 1; }
@@ -118,17 +106,23 @@
 </head>
 <body>
   <h1>🧪 Tabib AI - Pesan Herbal</h1>
+
+  <!-- STEP 1 -->
   <div id="step1" class="section">
     <h2>1. Masukkan Nama Pembeli</h2>
     <input type="text" id="namaInput" placeholder="Contoh: Budi" />
     <button class="primary" onclick="lanjutKeKeluhan()">Lanjut</button>
   </div>
+
+  <!-- STEP 2 -->
   <div id="step2" class="section hidden">
     <h2>2. Masukkan Keluhan</h2>
     <textarea id="keluhanInput" rows="3" placeholder="Tulis keluhan atau gunakan suara..."></textarea>
     <button id="recordBtn" class="danger">🎤 Rekam Suara</button><br>
     <button class="primary" onclick="kirimKeluhan()">Kirim ke Tabib</button>
   </div>
+
+  <!-- PROSES -->
   <div id="proses" class="section hidden">
     <h2><span class="spinner">⏳</span> <span id="statusText" class="loading-dots">Obat sedang diproses</span></h2>
     <div style="display: flex; flex-direction: column; align-items: start; gap: 15px; margin-top: 20px;">
@@ -144,10 +138,14 @@
       sambil tabib akan membaca garis tangan anda.
     </div>
   </div>
+
+  <!-- DONE -->
   <div id="buatObat" class="section hidden">
     <h2>✅ Resep sudah dikirim ke mesin.</h2>
     <button class="success" onclick="alert('Mesin sedang membuat obat...')">🔧 Buat Obat</button>
   </div>
+
+  <!-- SCRIPT -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script>
     let namaPembeli = '';
@@ -193,27 +191,54 @@
     async function kirimKeluhan() {
       const keluhan = document.getElementById('keluhanInput').value.trim();
       if (!keluhan) return alert('Keluhan belum diisi.');
-
       document.getElementById('step2').classList.add('hidden');
       document.getElementById('proses').classList.remove('hidden');
-
       document.getElementById('dot1').classList.add('active');
       setTimeout(() => document.getElementById('dot2').classList.add('active'), 1000);
       setTimeout(() => document.getElementById('dot3').classList.add('active'), 2000);
       setTimeout(() => document.getElementById('dot4').classList.add('active'), 3000);
-
       try {
-        const res = await fetch('https://ferna-backend.onrender.com/chat', {
+        await fetch('https://ferna-backend.onrender.com/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nama: namaPembeli, message: keluhan })
         });
-        const data = await res.json();
-        console.log('Dikirim ke backend:', data);
+        pollingStatus(); // start polling
       } catch (err) {
         console.error('Gagal kirim ke backend:', err);
         alert('Gagal mengirim ke tabib AI.');
       }
+    }
+
+    function tampilkanSelesai() {
+      document.getElementById('statusText').textContent = '🧪 Ramuan siap dibuat';
+      document.getElementById('statusText').classList.remove('loading-dots');
+      document.querySelector('.spinner')?.remove();
+      setTimeout(() => {
+        document.getElementById('proses').classList.add('hidden');
+        document.getElementById('buatObat').classList.remove('hidden');
+      }, 1500);
+    }
+
+    async function pollingStatus() {
+      let tries = 0;
+      const interval = setInterval(async () => {
+        tries++;
+        try {
+          const res = await fetch(`https://ferna-backend.onrender.com/status?nama=${encodeURIComponent(namaPembeli)}`);
+          const data = await res.json();
+          if (data.status === 'done') {
+            clearInterval(interval);
+            tampilkanSelesai();
+          }
+        } catch (err) {
+          console.error('Polling error:', err.message);
+        }
+        if (tries > 30) {
+          clearInterval(interval);
+          alert('⏱️ Tidak ada respon dari tabib.');
+        }
+      }, 3000);
     }
 
     const mqttClient = mqtt.connect('wss://aaa73f0ae1d24cc3bf099bad4916f53e.s1.eu.hivemq.cloud:8884/mqtt', {
@@ -236,18 +261,11 @@
       if (topic === 'tabibai/status') {
         try {
           const data = JSON.parse(message.toString());
-          console.log('MQTT data:', data);
           if (data.nama?.toLowerCase() === namaPembeli.toLowerCase() && data.status === 'done') {
-            document.getElementById('statusText').textContent = '🧪 Ramuan siap dibuat';
-            document.getElementById('statusText').classList.remove('loading-dots');
-            document.querySelector('.spinner')?.remove();
-            setTimeout(() => {
-              document.getElementById('proses').classList.add('hidden');
-              document.getElementById('buatObat').classList.remove('hidden');
-            }, 1500);
+            tampilkanSelesai();
           }
         } catch (e) {
-          console.error('Format pesan MQTT salah:', e);
+          console.error('MQTT JSON error:', e);
         }
       }
     });
