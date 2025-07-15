@@ -72,15 +72,14 @@
       transition: background-color 0.3s;
     }
     .dot.active {
-  background-color: #2ecc71; /* hijau */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-}
-
+      background-color: #2ecc71;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
     .fade-text {
       margin-top: 25px;
       text-align: center;
@@ -136,7 +135,7 @@
       <div class="status-item"><span class="dot" id="dot1"></span> Mengirim ke Tabib AI</div>
       <div class="status-item"><span class="dot" id="dot2"></span> Tabib meresepkan</div>
       <div class="status-item"><span class="dot" id="dot3"></span> Resep jadi</div>
-      <div class="status-item"><span class="dot" id="dot4"></span> Resep dikirim ke juru ramu</div>
+      <div class="status-item"><span class="dot" id="dot4"></span> Membuat link pembayaran</div>
     </div>
     <div id="petunjuk" class="fade-text">
       Silahkan menyiapkan gelas dan letakan di cawan ramuan.<br>
@@ -149,13 +148,10 @@
   <!-- DONE -->
   <div id="buatObat" class="section hidden">
     <h2>✅ Resep sudah dikirim ke mesin.</h2>
-   <div class="fade-text">
-    Pastikan gelas sudah berada di cawan ramuan.<br>
-    Tunggu hingga lampu hijau dan pemindai menyala <br>
-    lalu Tempelkan telapak tangan anda <br>
-    di pemindai agar tabib dapat <br>
-    membaca garis tangan anda.
-  </div>
+    <p class="fade-text">Pastikan gelas sudah berada di cawan ramuan.<br>
+    Tunggu hingga lampu hijau dan pemindai menyala.<br>
+    Lalu tempelkan telapak tangan anda di pemindai untuk melanjutkan.</p>
+    <button class="success" onclick="prosesPembayaran()">Bayar QRIS</button>
   </div>
 
   <!-- SCRIPT -->
@@ -206,16 +202,17 @@
       if (!keluhan) return alert('Keluhan belum diisi.');
       document.getElementById('step2').classList.add('hidden');
       document.getElementById('proses').classList.remove('hidden');
-      function aktifkanDot(id) {
-  const dot = document.getElementById(id);
-  dot.classList.add('active');
-  dot.textContent = '✔';
-}
 
-aktifkanDot('dot1');
-setTimeout(() => aktifkanDot('dot2'), 1000);
-setTimeout(() => aktifkanDot('dot3'), 2000);
-setTimeout(() => aktifkanDot('dot4'), 3000);
+      function aktifkanDot(id) {
+        const dot = document.getElementById(id);
+        dot.classList.add('active');
+        dot.textContent = '✔';
+      }
+
+      aktifkanDot('dot1');
+      setTimeout(() => aktifkanDot('dot2'), 1000);
+      setTimeout(() => aktifkanDot('dot3'), 2000);
+      setTimeout(() => aktifkanDot('dot4'), 3000);
 
       try {
         await fetch('https://ferna-backend.onrender.com/chat', {
@@ -223,7 +220,7 @@ setTimeout(() => aktifkanDot('dot4'), 3000);
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nama: namaPembeli, message: keluhan })
         });
-        pollingStatus(); // start polling
+        pollingStatus(); // mulai polling
       } catch (err) {
         console.error('Gagal kirim ke backend:', err);
         alert('Gagal mengirim ke tabib AI.');
@@ -231,7 +228,7 @@ setTimeout(() => aktifkanDot('dot4'), 3000);
     }
 
     function tampilkanSelesai() {
-      document.getElementById('statusText').textContent = '🧪 Ramuan siap dibuat';
+      document.getElementById('statusText').textContent = '🧪 Resep siap';
       document.getElementById('statusText').classList.remove('loading-dots');
       document.querySelector('.spinner')?.remove();
       setTimeout(() => {
@@ -261,6 +258,26 @@ setTimeout(() => aktifkanDot('dot4'), 3000);
       }, 3000);
     }
 
+    async function prosesPembayaran() {
+      try {
+        const res = await fetch('https://ferna-backend.onrender.com/bayar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nama: namaPembeli })
+        });
+        const data = await res.json();
+        if (data.payment_url) {
+          window.location.href = data.payment_url;
+        } else {
+          alert('Gagal membuat link pembayaran.');
+        }
+      } catch (e) {
+        alert('Error koneksi saat membuat pembayaran.');
+        console.error(e);
+      }
+    }
+
+    // MQTT status (tidak diubah)
     const mqttClient = mqtt.connect('wss://aaa73f0ae1d24cc3bf099bad4916f53e.s1.eu.hivemq.cloud:8884/mqtt', {
       username: 'herbal',
       password: 'Astari1412',
