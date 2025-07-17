@@ -114,6 +114,7 @@
   <div id="step2" class="section hidden">
     <h2>2. Masukkan Keluhan</h2>
     <textarea id="keluhanInput" rows="3" placeholder="Tulis keluhan atau gunakan suara..."></textarea>
+    <button onclick="mulaiVoice()" class="danger" style="margin-top: 10px;">🎤 Gunakan Suara</button>
     <button class="primary" onclick="kirimKeluhan()">Kirim ke Tabib</button>
   </div>
 
@@ -137,13 +138,44 @@
     <p class="fade-text">
       Total yang harus dibayar: <br>
       <strong style="font-size: 24px;" id="totalHarga">Rp -</strong><br><br>
-      Bayar secara manual ke petugas lalu tempelkan telapak tangan di pemindai untuk melanjutkan.
+      Bayar secara manual ke petugas.
     </p>
   </div>
 
   <script>
     let namaPembeli = '';
     let totalHarga = 0;
+
+
+let recognition;
+  function mulaiVoice() {
+    // Cek apakah browser support
+    if (!('webkitSpeechRecognition' in window)) {
+      alert("🎙️ Browser tidak mendukung fitur suara. Coba Chrome di Android.");
+      return;
+    }
+
+    // Inisialisasi
+    recognition = new webkitSpeechRecognition();
+    recognition.lang = 'id-ID';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.start();
+    alert("🎤 Bicara sekarang...");
+
+    recognition.onresult = function(event) {
+      const hasil = event.results[0][0].transcript;
+      const textarea = document.getElementById('keluhanInput');
+      textarea.value = (textarea.value + ' ' + hasil).trim();
+    };
+
+    recognition.onerror = function(event) {
+      console.error('Voice error:', event.error);
+      alert('❌ Gagal mengenali suara. Coba ulangi.');
+    };
+  }
+
 
     function lanjutKeKeluhan() {
       const input = document.getElementById('namaInput').value.trim();
