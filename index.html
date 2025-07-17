@@ -25,7 +25,6 @@
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      box-sizing: border-box;
       text-align: center;
       margin-bottom: 20px;
     }
@@ -36,7 +35,6 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 16px;
-      box-sizing: border-box;
     }
     button {
       margin-top: 15px;
@@ -103,14 +101,12 @@
 <body>
   <h1>🔮 Tabib AI - Pesan Herbal</h1>
 
-  <!-- STEP 1 -->
   <div id="step1" class="section">
     <h2>1. Masukkan Nama Pembeli</h2>
     <input type="text" id="namaInput" placeholder="Contoh: Budi" />
     <button class="primary" onclick="lanjutKeKeluhan()">Lanjut</button>
   </div>
 
-  <!-- STEP 2 -->
   <div id="step2" class="section hidden">
     <h2>2. Masukkan Keluhan</h2>
     <textarea id="keluhanInput" rows="3" placeholder="Tulis keluhan atau gunakan suara..."></textarea>
@@ -118,7 +114,6 @@
     <button class="primary" onclick="kirimKeluhan()">Kirim ke Tabib</button>
   </div>
 
-  <!-- PROSES -->
   <div id="proses" class="section hidden">
     <h2><span class="spinner">⏳</span> <span id="statusText" class="loading-dots">Obat sedang diproses</span></h2>
     <div style="margin-top: 20px;">
@@ -132,7 +127,6 @@
     </div>
   </div>
 
-  <!-- DONE -->
   <div id="buatObat" class="section hidden">
     <h2>✅ Resep sudah dikirim ke mesin</h2>
     <p class="fade-text">
@@ -144,38 +138,33 @@
 
   <script>
     let namaPembeli = '';
+    let keluhan = '';
     let totalHarga = 0;
 
+    let recognition;
+    function mulaiVoice() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("🎙️ Browser tidak mendukung fitur suara.");
+        return;
+      }
 
-let recognition;
-  function mulaiVoice() {
-    // Cek apakah browser support
-    if (!('webkitSpeechRecognition' in window)) {
-      alert("🎙️ Browser tidak mendukung fitur suara. Coba Chrome di Android.");
-      return;
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = 'id-ID';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+      alert("🎤 Bicara sekarang...");
+
+      recognition.onresult = function(event) {
+        const hasil = event.results[0][0].transcript;
+        document.getElementById('keluhanInput').value += ' ' + hasil;
+      };
+
+      recognition.onerror = function(event) {
+        alert('❌ Gagal mengenali suara.');
+      };
     }
-
-    // Inisialisasi
-    recognition = new webkitSpeechRecognition();
-    recognition.lang = 'id-ID';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.start();
-    alert("🎤 Bicara sekarang...");
-
-    recognition.onresult = function(event) {
-      const hasil = event.results[0][0].transcript;
-      const textarea = document.getElementById('keluhanInput');
-      textarea.value = (textarea.value + ' ' + hasil).trim();
-    };
-
-    recognition.onerror = function(event) {
-      console.error('Voice error:', event.error);
-      alert('❌ Gagal mengenali suara. Coba ulangi.');
-    };
-  }
-
 
     function lanjutKeKeluhan() {
       const input = document.getElementById('namaInput').value.trim();
@@ -199,11 +188,11 @@ let recognition;
         document.getElementById('proses').classList.add('hidden');
         document.getElementById('buatObat').classList.remove('hidden');
         document.getElementById('totalHarga').textContent = `Rp ${totalHarga.toLocaleString('id-ID')}`;
-      }, 1500);
+      }, 1000);
     }
 
     async function kirimKeluhan() {
-      const keluhan = document.getElementById('keluhanInput').value.trim();
+      keluhan = document.getElementById('keluhanInput').value.trim();
       if (!keluhan) return alert('Keluhan belum diisi.');
       document.getElementById('step2').classList.add('hidden');
       document.getElementById('proses').classList.remove('hidden');
@@ -220,8 +209,12 @@ let recognition;
           body: JSON.stringify({ nama: namaPembeli, message: keluhan })
         });
         const data = await res.json();
-        if (data.total) totalHarga = data.total;
-        pollingStatus();
+        if (data.total) {
+          totalHarga = data.total;
+          tampilkanSelesai();
+        } else {
+          pollingStatus();
+        }
       } catch (err) {
         console.error('Gagal kirim ke backend:', err);
         alert('Gagal mengirim ke tabib AI.');
@@ -232,26 +225,21 @@ let recognition;
       let tries = 0;
       const interval = setInterval(async () => {
         tries++;
-try {
-  const res = await fetch('https://ferna-backend.onrender.com/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nama: namaPembeli, message: keluhan })
-  });
-  const data = await res.json();
-  if (data.total) {
-    totalHarga = data.total;
-    tampilkanSelesai(); // <== tambahkan ini
-  }
-  // pollingStatus(); // opsional, bisa kamu hapus jika tak perlu
-} catch (err) {
-  console.error('Gagal kirim ke backend:', err);
-  alert('Gagal mengirim ke tabib AI.');
-}
-
-        if (tries > 30) {
-          clearInterval(interval);
-          alert('⏱️ Tidak ada respon dari tabib.');
+        if (tries > 20) return clearInterval(interval);
+        try {
+          const res = await fetch('https://ferna-backend.onrender.com/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nama: namaPembeli, message: keluhan })
+          });
+          const data = await res.json();
+          if (data.total) {
+            totalHarga = data.total;
+            clearInterval(interval);
+            tampilkanSelesai();
+          }
+        } catch (err) {
+          console.warn('Polling gagal...');
         }
       }, 3000);
     }
