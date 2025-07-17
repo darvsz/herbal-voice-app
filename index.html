@@ -232,16 +232,23 @@ let recognition;
       let tries = 0;
       const interval = setInterval(async () => {
         tries++;
-        try {
-          const res = await fetch(`https://ferna-backend.onrender.com/status?nama=${encodeURIComponent(namaPembeli)}`);
-          const data = await res.json();
-          if (data.status === 'done') {
-            clearInterval(interval);
-            tampilkanSelesai();
-          }
-        } catch (err) {
-          console.error('Polling error:', err.message);
-        }
+try {
+  const res = await fetch('https://ferna-backend.onrender.com/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nama: namaPembeli, message: keluhan })
+  });
+  const data = await res.json();
+  if (data.total) {
+    totalHarga = data.total;
+    tampilkanSelesai(); // <== tambahkan ini
+  }
+  // pollingStatus(); // opsional, bisa kamu hapus jika tak perlu
+} catch (err) {
+  console.error('Gagal kirim ke backend:', err);
+  alert('Gagal mengirim ke tabib AI.');
+}
+
         if (tries > 30) {
           clearInterval(interval);
           alert('⏱️ Tidak ada respon dari tabib.');
